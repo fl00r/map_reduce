@@ -70,7 +70,7 @@ module MapReduce::Socket
     def reduce(envelope)
       @connections[envelope] ||= true
       if @state == :reduce
-        @master.reduce(envelope)
+        @state == :map  unless @master.reduce(envelope)
       else
         EM.add_timer(REDUCE_WAIT) do
           reduce(envelope)
@@ -88,6 +88,13 @@ module MapReduce::Socket
     #
     def not_ok(envelope, error)
       send_reply(["error", error], envelope)
+    end
+
+    # Switch back to :map state if reduce finished
+    #
+    def send_reply(data, envelope)
+      @state = :map  unless data
+      super
     end
   end
 end
