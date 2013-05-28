@@ -4,7 +4,7 @@
 #   but for "reduce" requests it returns key with grouped values.
 #
 module MapReduce::Socket
-  class MasterEm < EM::Protocols::Zmq2::Rep
+  class Master < EM::Protocols::Zmq2::Rep
     # If worker is ready to reduce data, but we are still in MAP state
     # we will sleep for REDUCE_WAIT seconds till state is not REDUCE
     REDUCE_WAIT = 1

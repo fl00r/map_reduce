@@ -4,3 +4,4 @@ require LIB_PATH
 
 require 'minitest/spec'
 require 'minitest/autorun'
+require 'em-synchrony'

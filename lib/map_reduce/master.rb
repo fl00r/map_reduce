@@ -1,3 +1,5 @@
+require File.expand_path("../socket/master", __FILE__)
+
 module MapReduce
   class Master
     # How often data will be flushed to disk
@@ -12,9 +14,6 @@ module MapReduce
     # Valid options:
     #   * socket - socket address to bind
     #       default is 'ipc:///dev/shm/master.sock'
-    #   * type - connection type:
-    #     ** :em - Eventmachine with callbacks (default)
-    #     ** :sync - Synchronous type on Fibers
     #   * log_folder - folder to store recieved MAP data
     #       default is '/tmp/mapreduce/'
     #   * workers - count of workers that will emit data.
@@ -36,18 +35,6 @@ module MapReduce
       # Delimiter to store key/value pairs in log
       @delimiter = opts[:delimiter] || "|"
 
-      opts[:type] ||= :em
-      @socket_class = case opts[:type]
-      when :em
-        require File.expand_path("../socket/master_em", __FILE__)
-        MapReduce::Socket::MasterEm
-      when :sync
-        require File.expand_path("../socket/master_sync", __FILE__)
-        MapReduce::Socket::MasterSycn
-      else
-        fail "Wrong Connection type. Choose :em or :sync, not #{opts[:type]}"
-      end
-
       @log = []
       @data = []
       @workers_envelopes = {}
@@ -56,12 +43,24 @@ module MapReduce
 
       FileUtils.mkdir_p(@log_folder)
       FileUtils.touch(@log_filename)
+    end
 
-      # Init socket
-      master_socket
+    # Start Eventloop
+    #
+    def run
+      EM.run do
+        # Init socket
+        master_socket
 
-      # Init flushing timer
-      flush
+        # Init flushing timer
+        flush
+      end
+    end
+
+    # Stop Eventloop
+    #
+    def stop
+      EM.stop
     end
 
     # Store data in log array till flush
@@ -90,7 +89,7 @@ module MapReduce
       end
     end
 
-    # Opening log file for read/write
+    # Openning log file for read/write
     #
     def log_file
       @log_file ||= begin
@@ -98,7 +97,7 @@ module MapReduce
       end
     end
 
-    # Opening sorted log for reading
+    # Openning sorted log for reading
     #
     def sorted_log_file
       @sorted_log_file ||= begin
@@ -106,6 +105,8 @@ module MapReduce
       end
     end
 
+    # Flushing data to disk once per FLUSH_TIMEOUT seconds
+    #
     def flush
       if @log.any?
         log_file << @log*"\n"
@@ -162,6 +163,7 @@ module MapReduce
         EM.next_tick{ group(iter) }
       end
     rescue StopIteration => e
+      FileUtils.rm(@sorted_log_filename)
       @reduce_stop = true
     end
 
@@ -169,7 +171,7 @@ module MapReduce
     #
     def master_socket
       @master_socket ||= begin
-        sock = @socket_class.new self, @workers
+        sock = MapReduce::Socket::Master.new self, @workers
         sock.bind @socket_addr
         sock
       end

@@ -22,7 +22,7 @@ module MapReduce
         MapReduce::Socket::WorkerEm
       when :sync
         require File.expand_path("../socket/worker_sync", __FILE__)
-        MapReduce::Socket::WorkerSycn
+        MapReduce::Socket::WorkerSync
       else
         fail "Wrong Connection type. Choose :em or :sync, not #{opts[:type]}"
       end
@@ -47,10 +47,11 @@ module MapReduce
       resp = 0
 
       worker_sockets.each do |sock|
-        sock.send_request(["map_finished"]) do
-          blk.call  if (resp+=1) == all
+        sock.send_request(["map_finished"]) do |msg|
+          blk.call  if block_given? && (resp+=1) == all
         end
       end
+      ["ok"]
     end
 
     # Reduce operation.
