@@ -76,23 +76,25 @@ describe "MapReduce stack" do
       Process.kill "TERM", @pid2
     end
 
-    it "should map and reduce some data in SYNC mode" do
+    it "should map and reduce some data in SYNC mode twice" do
       EM.synchrony do
-        data = {}
         worker = MapReduce::Worker.new type: :sync,  masters: ["ipc:///dev/shm/sock1.sock", "ipc:///dev/shm/sock2.sock"]
-        worker.map("Petr", ["Radiohead", "Muse", "R.E.M."] * ',')
-        worker.map("Alex", ["Madonna", "Lady Gaga"] * ',')
-        worker.map("Petr", ["Radiohead", "The Beatles", "Aquarium"] * ',')
-        worker.map("Michael", ["Blur"] * ',')
-        worker.map("Gosha", ["DDT", "Splin"] * ',')
-        worker.map("Obama", ["Adele", "Rolling Stones"] * ',')
-        worker.map_finished
-        worker.reduce do |key, values|
-          data[key] = values  if key
+        2.times do
+          data = {}
+          worker.map("Petr", ["Radiohead", "Muse", "R.E.M."] * ',')
+          worker.map("Alex", ["Madonna", "Lady Gaga"] * ',')
+          worker.map("Petr", ["Radiohead", "The Beatles", "Aquarium"] * ',')
+          worker.map("Michael", ["Blur"] * ',')
+          worker.map("Gosha", ["DDT", "Splin"] * ',')
+          worker.map("Obama", ["Adele", "Rolling Stones"] * ',')
+          worker.map_finished
+          worker.reduce do |key, values|
+            data[key] = values  if key
+          end
+          data.size.must_equal 5
+          data["Petr"].must_equal [["Radiohead", "Muse", "R.E.M."] * ',', ["Radiohead", "The Beatles", "Aquarium"] * ',']
+          data["Alex"].must_equal [["Madonna", "Lady Gaga"] * ',']
         end
-        data.size.must_equal 5
-        data["Petr"].must_equal [["Radiohead", "Muse", "R.E.M."] * ',', ["Radiohead", "The Beatles", "Aquarium"] * ',']
-        data["Alex"].must_equal [["Madonna", "Lady Gaga"] * ',']
 
         EM.stop
       end

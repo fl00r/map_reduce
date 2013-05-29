@@ -64,13 +64,12 @@ module MapReduce::Socket
       @master.reduce!
     end
 
-    # Wait till all workers stopps sending MAP.
+    # Wait till all workers stops sending MAP.
     # After all workers stopped we start REDUCE part of job.
     #
     def reduce(envelope)
-      @connections[envelope] ||= true
       if @state == :reduce
-        @state == :map  unless @master.reduce(envelope)
+        @master.reduce(envelope)
       else
         EM.add_timer(REDUCE_WAIT) do
           reduce(envelope)

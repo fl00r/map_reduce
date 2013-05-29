@@ -126,6 +126,7 @@ module MapReduce
     def sort
       `sort #{@log_filename} -o #{@sorted_log_filename}`
       FileUtils.rm(@log_filename)
+      @log_file = nil
     end
 
     # Start reducing part.
@@ -164,6 +165,7 @@ module MapReduce
       end
     rescue StopIteration => e
       FileUtils.rm(@sorted_log_filename)
+      @sorted_log_file = nil
       @reduce_stop = true
     end
 
