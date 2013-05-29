@@ -96,7 +96,7 @@ module MapReduce
     #
     def pick_socket(key)
       shard = if worker_sockets.size > 1
-        Digest::MD5.hexdigest(key.to_s).to_i(16) % worker_socket.size
+        Digest::MD5.hexdigest(key.to_s).to_i(16) % worker_sockets.size
       else
         0
       end
