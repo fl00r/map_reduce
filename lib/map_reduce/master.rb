@@ -109,7 +109,7 @@ module MapReduce
     #
     def flush
       if @log.any?
-        log_file << @log*"\n"
+        log_file << @log*"\n" << "\n"
         log_file.flush
         @log.clear
       end

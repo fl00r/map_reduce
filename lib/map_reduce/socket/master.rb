@@ -92,7 +92,10 @@ module MapReduce::Socket
     # Switch back to :map state if reduce finished
     #
     def send_reply(data, envelope)
-      @state = :map  unless data
+      unless data
+        @state = :map
+        @connections = {}
+      end
       super
     end
   end
