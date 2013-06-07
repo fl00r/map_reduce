@@ -180,7 +180,7 @@ EM.synchrony do
       # How many time article was visited
       count = values.size
       # Let's increment this value
-      Article.increment(visits: count)
+      Article.increment(id: key, visits: count)
     end
   end
 end
