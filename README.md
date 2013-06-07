@@ -159,7 +159,7 @@ MapReduce::Master.new(socket: "#{current_ip}:5555")
 ```
 
 ```ruby
-# mapper.rb
+# map_reducer.rb
 require 'map_reduce'
 require 'em-synchrony'
 
@@ -171,7 +171,7 @@ def incrementer
     mapper.map(article_id, 1)
   end
 
-  mapper.wait_all_finished
+  mapper.wait_for_all
 
   reducer.reduce do |key, values|
     # How many time article was visited
@@ -181,13 +181,19 @@ def incrementer
   end
 end
 
-EM.sycnhrony do
+EM.synchrony do
   # Run process each 12 hours
   EM::Synchrony.add_periodic_timer(60*60*12) do
     incrementer
   end
 end
 ```
+
+And run them
+
+    $ ruby master.rb
+    $ ruby map_reducer.rb
+
 
 ## Summary
 
