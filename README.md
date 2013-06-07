@@ -166,12 +166,11 @@ require 'em-synchrony'
 @mapper = MapReduce::Mapper.new masters: [ ... ], type: :sync
 @reducer = MapReduce::Reducer.new masters: [ ... ], type: :sync
 
-
 EM.synchrony do
   # Run process each 12 hours
   EM::Synchrony.add_periodic_timer(60*60*12) do
     File.open("/path/to/log").each do |line|
-      article_id, user_id, timestamp = line.chomp.aplit(", ")
+      article_id, user_id, timestamp = line.chomp.split(", ")
       @mapper.map(article_id, 1)
     end
 
