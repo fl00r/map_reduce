@@ -18,52 +18,108 @@ Or install it yourself as:
 
     $ gem install mapreduce
 
-## Usage
+## Introduction
 
-Imagine, you have got two servers with logs like `user_id,event\n`. You need to count events for each user.
+MapReduce has got three entities:
 
-So what you could do: run two masters (you can ran 1, 2, 3 etc.), one per server.
+* Master
+* Mapper
+* Reducer
 
-Also you should run two workers: one per log.
+Perhaps later Manager will be presented to synchronyse Reducers.
 
-Ok, here is your master code:
+### Master
+
+Master is a process who accepts emmited by Mappers data, sort it and sends grouped data to Reducers. One Master can serve multiple tasks (multiple Mappers clusters).
+
+To run Master you could specify following options
+
+* TCP socket address to bind, Workers will connect to this address (default is tcp://127.0.0.1:5555)
+* Logs folder to store temprorary logs with received data (default is "/tmp/map_reduce"); be sure to add read/write access for proccess to this folder
+* Delimeter for key, value (default is \t); sometimes you want to set your own delimeter if TAB could be found in your key
+
+Also you could define some blocks of code. It could be useful for geting some stats from Master.
+
+* after_map - this block will be executed after Master received emmited data
+* after_reduce - this block will be executed after Master sended data to Reducer
+
+All blocks recieves `|key, value, task_name|`
+
+Simple Master
 
 ```ruby
-# master.rb
 require 'map_reduce'
-master = Master.new socket: "tcp://server{1,2}.ip:15000"
+# Default params
+master = MapReduce::Master.new
+# Same as
+master = MapReduce::Master.new socket: "tcp://127.0.0.1:555",
+                               log_folder: "/tmp/map_reduce",
+                               delimiter: "\t"
+
+# Define some logging after map and reduce
+master.after_map do |key, value, task|
+  puts "Task: #{task}, received key: #{key}"
+end
+
+master.after_reduce do |key, values, task|
+  puts "Task: #{task}, for key: #{key} was sended #{values.size} items"
+end
+
+# Run Master
 master.run
 ```
 
-Run it on each server
+### Mapper
 
-```bash
-$ ruby master.rb
-```
+Mapper emmits data to masters. It could read log, database, or answer to phone calls. What should Mapper know is how to connect to Masters and it is ready to go. Also you could choose mode in which you want to work. Worker works asynchronously, but you could choose if you want to write callbacks (pure EventMachine) or you prefer to wrap it in Fibers (em-synchrony, for example). Also you could specify task name to worker if Masters serve many tasks.
 
-Now worker part. Worker wil emit (map) all data to masters and then reduce it.
+* masters - is an array of all available Masters' sockets
+* type - :em / :sync (:em id default)
+* task - task name, default is nil
+
+For example, we have got some Web application (shop) and you want to explore which goods people look with each other.
+
+(Let's suppose that web server is running under EventMachine and each request is spawned in Fiber)
 
 ```ruby
-# worker.rb
+# Define somewhere your worker
 require 'map_reduce'
-worker = Worker.new masters: ["tcp://server1.ip:15000", "tcp://server2.ip:15000"], type: :sync
 
-File.open("/path/to/log").each do |line|
-  user_id, event = line.chomp.split(",")
-  # emit some data
-  worker.map(user_id, event)
+@worker = MapReduce::Worker.new type: :sync, 
+            masters: ["tcp://192.168.1.1:5555", "tcp://192.168.1.2:5555"],
+            task: "goods"
+
+# And use it in your Web App
+get "/good/:id" do
+  @good = Good.find(params[:id])
+  # Send current user's id and good's id
+  @worker.emit(current_user.id, @good.id)
+  haml :good
 end
+```
 
-# tell masters that you've finished
-worker.map_finished
+### Reducer
 
-# start some reduce job
-worker.reduce do |key, values|
-  grouped = values.group_by{ |k| k }
-  puts "User: #{key}"
-  puts "Events:"
-  grouped.each do |event, events|
-    puts "#{event}: #{events.size}"
+Reducer is a guy who receives grouped data from Masters. In our previouse example with shop Reducer will recieve all goods that current user visited for every user. So now you can use some ML algorithms, or append data to existing GoodsGraph or whatever science.
+
+As Worker Reducer should know masters sockets addresses, type of connection and task name if needed (if Mapper emits data with named task, Reducer should specify it as well).
+
+```ruby
+require 'em-synchrony'
+require 'map_reduce'
+# initialize one
+reducer = MapReduce::Reducer.new type: :sync, 
+            masters: ["tcp://192.168.1.1:5555", "tcp://192.168.1.2:5555"],
+            task: "goods"
+
+# Let's reduce data with 3 hour after previouse reduce
+EM.synchrony do
+  while true
+    reducer.reduce do |key, values|
+      # You can do some magick here
+      puts "User: #{key}, visited #{values} today"
+    end
+    EM::Synchrony.sleep(60 * 60 * 3)
   end
 end
 ```
