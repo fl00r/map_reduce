@@ -93,7 +93,7 @@ require 'map_reduce'
 get "/good/:id" do
   @good = Good.find(params[:id])
   # Send current user's id and good's id
-  @worker.emit(current_user.id, @good.id)
+  @worker.map(current_user.id, @good.id)
   haml :good
 end
 ```
@@ -163,28 +163,26 @@ MapReduce::Master.new(socket: "#{current_ip}:5555")
 require 'map_reduce'
 require 'em-synchrony'
 
-mapper = MapReduce::Mapper.new masters: [ ... ], type: :sync
+@mapper = MapReduce::Mapper.new masters: [ ... ], type: :sync
+@reducer = MapReduce::Reducer.new masters: [ ... ], type: :sync
 
-def incrementer
-  File.open("/path/to/log").each do |line|
-    article_id, user_id, timestamp = line.chomp.aplit(", ")
-    mapper.map(article_id, 1)
-  end
-
-  mapper.wait_for_all
-
-  reducer.reduce do |key, values|
-    # How many time article was visited
-    count = values.size
-    # Let's increment this value
-    Article.increment(visits: count)
-  end
-end
 
 EM.synchrony do
   # Run process each 12 hours
   EM::Synchrony.add_periodic_timer(60*60*12) do
-    incrementer
+    File.open("/path/to/log").each do |line|
+      article_id, user_id, timestamp = line.chomp.aplit(", ")
+      @mapper.map(article_id, 1)
+    end
+
+    @mapper.wait_for_all
+
+    @reducer.reduce do |key, values|
+      # How many time article was visited
+      count = values.size
+      # Let's increment this value
+      Article.increment(visits: count)
+    end
   end
 end
 ```
