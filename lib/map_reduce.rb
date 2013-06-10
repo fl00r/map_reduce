@@ -17,5 +17,11 @@ module MapReduce
   end
 end
 
+require File.expand_path("../map_reduce/exceptions", __FILE__)
+require File.expand_path("../map_reduce/socket/req_fiber", __FILE__)
+require File.expand_path("../map_reduce/map_log", __FILE__)
+require File.expand_path("../map_reduce/reduce_log", __FILE__)
+require File.expand_path("../map_reduce/socket/master", __FILE__)
 require File.expand_path("../map_reduce/master", __FILE__)
-require File.expand_path("../map_reduce/worker", __FILE__)
+require File.expand_path("../map_reduce/mapper", __FILE__)
+require File.expand_path("../map_reduce/reducer", __FILE__)

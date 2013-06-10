@@ -74,7 +74,7 @@ master.run
 Mapper emmits data to masters. It could read log, database, or answer to phone calls. What should Mapper know is how to connect to Masters and it is ready to go. Also you could choose mode in which you want to work. Worker works asynchronously, but you could choose if you want to write callbacks (pure EventMachine) or you prefer to wrap it in Fibers (em-synchrony, for example). Also you could specify task name to worker if Masters serve many tasks.
 
 * masters - is an array of all available Masters' sockets
-* type - `:em` or `:sync` (`:em` id default)
+* type - `:em` or `:sync` (`:em` is default)
 * task - task name, default is `nil`
 
 For example, we have got some Web application (shop) and you want to explore which goods people look with each other.
@@ -113,7 +113,7 @@ So you will be blocked till all servers will finish mapping data. Then you could
 
 Reducer is a guy who receives grouped data from Masters. In our previous example with shop Reducer will recieve all goods that current user visited for every user. So now you can use some ML algorithms, or append data to existing GoodsGraph or whatever science.
 
-As Worker Reducer should know masters sockets addresses, type of connection and task name if needed (if Mapper emits data with named task, Reducer should specify it as well).
+As a Worker, Reducer should know masters' sockets addresses, type of connection and task name if needed (if Mapper emits data with named task, Reducer should specify it as well).
 
 ```ruby
 require 'em-synchrony'
@@ -123,7 +123,7 @@ reducer = MapReduce::Reducer.new type: :sync,
             masters: ["tcp://192.168.1.1:5555", "tcp://192.168.1.2:5555"],
             task: "goods"
 
-# Lets give masters to collect some data between each reduce
+# Let's give masters to collect some data between each reduce and sleep for a while
 EM.synchrony do
   while true
     reducer.reduce do |key, values|
