@@ -54,7 +54,7 @@ module MapReduce
     end
 
     def sort(fn)
-      `sort #{fn}`
+      `sort #{fn} -o #{fn}`
     end
   end
 end
