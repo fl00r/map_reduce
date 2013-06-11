@@ -16,6 +16,10 @@ module MapReduce
       end
     end
 
+    def stop
+      EM.stop
+    end
+
     def after_map(&blk)
       @after_map = blk
     end
