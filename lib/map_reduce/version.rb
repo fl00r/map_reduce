@@ -1,3 +1,3 @@
 module MapReduce
-  VERSION = "0.0.1.alpha5"
+  VERSION = "0.0.2"
 end

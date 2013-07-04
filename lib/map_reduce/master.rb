@@ -61,13 +61,13 @@ module MapReduce
         reduce_log(task, true).get_data
       end
 
-      reply(data, envelope)
-
       if data
         register(task, envelope, "reducer", status)
       else
         register(task, envelope, "reducer", "reduce_finished")
       end
+
+      reply(data, envelope)
 
       @after_reduce.call(data[0], data[1], task)  if data && @after_reduce
     end
@@ -89,9 +89,9 @@ module MapReduce
 
     def reduce_log(task, force = false)
       @reduce_log ||= {}
-      log = @reduce_log[task] ||= MapReduce::ReduceLog.new(map_log(task), @delimiter)
+      @reduce_log[task] ||= MapReduce::ReduceLog.new(map_log(task), @delimiter)
       @reduce_log[task].force  if force
-      log
+      @reduce_log[task]
     end
 
     def ok(envelope)

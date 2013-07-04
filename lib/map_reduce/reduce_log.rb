@@ -43,13 +43,11 @@ module MapReduce
     end
 
     def log_file
-      @log_file ||= begin
-        fn = @map_log.reset
-        if fn
-          @more = true
-          sort(fn)
-          fn
-        end
+      fn = @map_log.reset
+      if fn
+        @more = true
+        sort(fn)
+        fn
       end
     end
 

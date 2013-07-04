@@ -1,6 +1,6 @@
 module MapReduce
   class MapLog
-    MAX_BUFFER_SIZE = 2 ** 20
+    MAX_BUFFER_SIZE = 2 ** 21 # 2 MB
 
     def initialize(log_folder, task)
       @log_folder = log_folder
@@ -19,6 +19,7 @@ module MapReduce
       unless @log.empty?
         log_file << @log
         log_file.flush
+        @log.clear
       end
     end
 
@@ -35,7 +36,7 @@ module MapReduce
     def log_file
       @log_file ||= begin
         begin
-          fn = File.join(@log_folder, "map_#{@task}_#{Time.now.to_i}_#{rand(1000)}.log")
+          fn = File.join(@log_folder, "map_#{@task}_#{Time.now.to_i}_#{Process.pid}_#{rand(1000)}.log")
         end while File.exist?(fn)
         FileUtils.mkdir_p(@log_folder)
         File.open(fn, "a")

@@ -76,6 +76,30 @@ describe "MapReduce stack" do
         end
       end
 
+      it "should map -> reduce / reduce" do
+        EM.synchrony do
+          @mapper = MapReduce::Mapper.new type: :sync, task: "Fruits", masters: ["tcp://127.0.0.1:15555", "tcp://127.0.0.1:15556"]
+          @reducer = MapReduce::Reducer.new type: :sync, task: "Fruits", masters: ["tcp://127.0.0.1:15555", "tcp://127.0.0.1:15556"]
+
+          Fiber.new do
+            100.times do |i|
+              @mapper.map(i, 1)
+            end
+          end.resume
+          data = []
+          Fiber.new do
+            while data.size < 100
+              @reducer.reduce do |k, v|
+                data << k
+              end
+            end
+            data.sort.must_equal (0...100).to_a.map(&:to_s).sort
+            
+            EM.stop
+          end.resume
+        end
+      end
+
       it "should map/reduce-map/reduce with multiple masters" do
         EM.synchrony do
           @mapper1 = MapReduce::Mapper.new type: :sync, task: "Fruits", masters: ["tcp://127.0.0.1:15555", "tcp://127.0.0.1:15556"]
