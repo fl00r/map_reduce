@@ -22,6 +22,7 @@ module MapReduce
         log_file << @log
         log_file.flush
         @log.clear
+        @log_size = 0
       end
     end
 
