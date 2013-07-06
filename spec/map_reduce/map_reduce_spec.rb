@@ -4,7 +4,8 @@ describe "MapReduce stack" do
   describe "single master" do
     before do
       @pid1 = fork do
-        master = MapReduce::Master.new socket: "tcp://127.0.0.1:15555"
+        master = MapReduce::Master.new socket: "tcp://127.0.0.1:15555", 
+                                       log_folder: "/tmp/map_reduce/master1"
         trap("SIGINT") do
           master.stop
           exit
@@ -12,7 +13,8 @@ describe "MapReduce stack" do
         master.run
       end
       @pid2 = fork do
-        master = MapReduce::Master.new socket: "tcp://127.0.0.1:15556"
+        master = MapReduce::Master.new socket: "tcp://127.0.0.1:15556", 
+                                       log_folder: "/tmp/map_reduce/master2"
         trap("SIGINT") do
           master.stop
           exit
@@ -94,7 +96,7 @@ describe "MapReduce stack" do
               end
             end
             data.sort.must_equal (0...100).to_a.map(&:to_s).sort
-            
+
             EM.stop
           end.resume
         end

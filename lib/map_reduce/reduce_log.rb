@@ -23,7 +23,7 @@ module MapReduce
             end
           rescue StopIteration => e
             @file.close
-            FileUtils.rm(File.path(@file))
+            File.unlink(File.path(@file))
             @lines = nil
             break
           end
@@ -43,11 +43,15 @@ module MapReduce
     end
 
     def log_file
-      fn = @map_log.reset
-      if fn
-        @more = true
-        sort(fn)
-        fn
+      reduce_fn = File.join(@map_log.log_folder, "reducer.log")
+      if File.exist? reduce_fn
+        reduce_fn
+      else
+        reduce_fn = @map_log.reset
+        if reduce_fn
+          sort(reduce_fn)
+          reduce_fn
+        end
       end
     end
 
