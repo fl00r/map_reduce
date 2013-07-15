@@ -8,7 +8,7 @@ module EM::Protocols::Zmq2
         fib.resume(message)
       end
       if request_id
-        timer = EM.add_timer(1) {
+        timer = EM.add_timer(10) {
           MapReduce.logger.info("TIMEOUT")
           cancel_request(request_id)
         }

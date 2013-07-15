@@ -66,7 +66,7 @@ module MapReduce
       sock = sockets[num]
       # LOL :)
       if @disconnected[sock] && rand(10) != 0
-        pick_master(key.chars.to_a.shuffle.join)
+        pick_master(key.to_s.chars.to_a.shuffle.join)
       else
         sock
       end
