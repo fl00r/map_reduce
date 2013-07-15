@@ -40,9 +40,7 @@ module MapReduce
 
     def log_file
       @log_file ||= begin
-        begin
-          fn = File.join(@log_folder, "mapper.log")
-        end while File.exist?(fn)
+        fn = File.join(@log_folder, "mapper.log")
         FileUtils.mkdir_p(@log_folder)
         File.open(fn, "a")
       end

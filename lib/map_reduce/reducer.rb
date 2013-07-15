@@ -1,5 +1,7 @@
 module MapReduce
   class Reducer
+    TIMEOUT = 0.1
+
     def initialize(opts = {})
       @masters         = opts[:masters] || [::MapReduce::DEFAULT_SOCKET]
       @connection_type = opts[:type]    || :em

@@ -4,13 +4,26 @@ module MapReduce
       @masters         = opts[:masters] || [::MapReduce::DEFAULT_SOCKET]
       @connection_type = opts[:type]    || :em
       @task_name       = opts[:task]
+      @disconnected    = {}
     end
 
     def emit(key, value, &blk)
       raise MapReduce::Exceptions::BlankKey, "Key can't be nil"  if key.nil?
 
       sock = pick_master(key)
-      sock.send_request(["map", key, value, @task_name], &blk)
+      sock.send_request(["map", key, value, @task_name]) do |res|
+        if res
+          @disconnected.delete(sock)  if @disconnected[sock]
+          if blk
+            blk.call(res)
+          else 
+            return res
+          end
+        else
+          @disconnected[sock] = true
+          emit(key, value, &blk)
+        end
+      end
     end
     alias :map :emit
 
@@ -50,7 +63,13 @@ module MapReduce
 
     def pick_master(key)
       num = Digest::MD5.hexdigest(key.to_s).to_i(16) % sockets.size
-      sockets[num]
+      sock = sockets[num]
+      # LOL :)
+      if @disconnected[sock] && rand(10) != 0
+        pick_master(key.chars.to_a.shuffle.join)
+      else
+        sock
+      end
     end
 
     def sockets
