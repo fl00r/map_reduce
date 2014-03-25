@@ -9,6 +9,7 @@ module MapReduce
       if @lines
         current_key = nil
         current_values = []
+        line = nil
         while true
           begin
             line = @lines.peek.chomp
@@ -26,6 +27,8 @@ module MapReduce
             File.unlink(File.path(@file))
             @lines = nil
             break
+          rescue => e
+            MapReduce.logger.error("#{e.message} for line #{line.inspect}")
           end
         end
         [current_key, *current_values]
