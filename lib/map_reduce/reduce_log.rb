@@ -29,6 +29,7 @@ module MapReduce
             break
           rescue => e
             MapReduce.logger.error("#{e.message} for line #{line.inspect}")
+            @lines.next
           end
         end
         [current_key, *current_values]
